@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Monitor de hilera VitiScience</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: láminas técnicas en secuencia (planta, elevación, sección) con controles bajo cada figura; la última lámina es una calculadora de ángulos. */
+:root{
+  --bg:#F1F4EF; --panel:#FFFFFF; --ink:#17231C; --ink2:#506058; --line:#CBD3CC;
+  --accent:#6B2B5C; --on-accent:#FFFFFF;
+  --vine:#5E8C45; --vine2:#86AE62; --grape:#6B2B5C; --wood:#9C7440;
+  --alum:#B3BBBD; --alum2:#7F8B8E; --steel:#4B5558; --hous:#DEDED5; --hous2:#8B8E86;
+  --amber:#D98A1F; --glass:#1E3550; --roll:#2A2F31;
+  --font-d:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-b:'Figtree',system-ui,sans-serif;
+  --font-m:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1512; --panel:#161E19; --ink:#E8EEE9; --ink2:#9FB1A5; --line:#2B3730;
+  --accent:#D08BC2; --on-accent:#1A0F17;
+  --vine:#5F9249; --vine2:#7DB35C; --grape:#B565A3; --wood:#B88A4E;
+  --alum:#AEB8BA; --alum2:#7C888B; --steel:#6F7A7E; --hous:#D5D6CC; --hous2:#8E9188;
+  --amber:#F0A73C; --glass:#8FB4E0; --roll:#2A2F31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1512; --panel:#161E19; --ink:#E8EEE9; --ink2:#9FB1A5; --line:#2B3730;
+  --accent:#D08BC2; --on-accent:#1A0F17;
+  --vine:#5F9249; --vine2:#7DB35C; --grape:#B565A3; --wood:#B88A4E;
+  --alum:#AEB8BA; --alum2:#7C888B; --steel:#6F7A7E; --hous:#D5D6CC; --hous2:#8E9188;
+  --amber:#F0A73C; --glass:#8FB4E0; --roll:#2A2F31; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--font-b);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.page{max-width:1040px;margin:0 auto;padding-block:36px 64px}
+header{display:grid;gap:14px;margin-bottom:8px}
+.eyebrow{font:500 12px var(--font-m);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(2.1rem,6vw,3.6rem)/1.02 var(--font-d);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.lead{font-size:1.1rem;max-width:60ch;color:var(--ink2);margin:0}
+.spec{font:400 12.5px var(--font-m);color:var(--ink2);display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;list-style:none}
+section{display:grid;gap:14px;padding-top:36px;margin-top:36px;border-top:1px solid var(--line);min-width:0}
+h2{font:600 1.55rem/1.15 var(--font-d);letter-spacing:-.015em;margin:0;text-wrap:balance}
+.fignum{font:500 12px var(--font-m);color:var(--ink2);letter-spacing:.07em;text-transform:uppercase}
+p{margin:0;max-width:68ch}
+.note{font-size:14px;color:var(--ink2)}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow-x:auto;padding:8px}
+.fsvg{display:block;width:100%;min-width:640px;height:auto}
+.row{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;min-width:0;flex:1 1 240px}
+.ctl .cl{font-size:14px;color:var(--ink2)}
+.ctl output{font:500 14px var(--font-m);color:var(--ink)}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:4px 0}
+.btn{font:500 14px var(--font-b);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink2)}
+.sw{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.lab{display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);gap:22px;align-items:start}
+.lab .ctls{display:grid;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.kpi{border-top:2px solid var(--line);padding-top:8px;display:grid;gap:4px;align-content:start;min-width:0}
+.kl{font:500 12px var(--font-m);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2)}
+.kv{font:500 1.7rem/1.2 var(--font-m);color:var(--ink)}
+.ks{font-size:14px;color:var(--ink2)}
+.cov{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;gap:6px 10px;align-items:center;font:500 13px var(--font-m)}
+.track{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.fill{height:100%;background:var(--amber)}
+.notes{display:grid;gap:6px;font-size:15px}
+.notes p{max-width:72ch}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--ink2);max-width:76ch}
+
+.s-vine{fill:var(--vine)} .s-vine2{fill:var(--vine2)} .s-grape{fill:var(--grape)}
+.s-wood{fill:var(--wood);stroke:var(--steel);stroke-width:.6}
+.s-alum{fill:var(--alum);stroke:var(--alum2);stroke-width:.8}
+.s-steel{fill:var(--steel)}
+.s-roll{fill:var(--roll);stroke:var(--alum2);stroke-width:.8}
+.s-hous{fill:var(--hous);stroke:var(--hous2);stroke-width:1}
+.s-glass{fill:var(--glass)}
+.s-amber{fill:var(--amber);fill-opacity:.2;stroke:var(--amber);stroke-width:1}
+.s-fill-amber{fill:var(--amber)}
+.st-amber{stroke:var(--amber);fill:none}
+.st-steel{stroke:var(--steel);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.st-wood{stroke:var(--wood);fill:none;stroke-linecap:round}
+.ln{stroke:var(--ink2);stroke-width:.9;fill:none}
+.dash{stroke-dasharray:4 4}
+.t{font:12px var(--font-b);fill:var(--ink2)}
+.tm{font:11px var(--font-m);fill:var(--ink2)}
+.tb{font:600 12px var(--font-b);fill:var(--ink)}
+.ta{font:500 12px var(--font-m);fill:var(--accent)}
+.halo{paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round}
+@media (max-width:760px){.lab{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+
+<div class="page">
+<header>
+  <div class="eyebrow">VitiScience · prototipo en etapa de diseño</div>
+  <h1>Monitor de hilera</h1>
+  <p class="lead">Un carro avanza por un riel paralelo a la hilera y mira de lado, hacia los racimos, como quien camina de frente con la cabeza girada hacia las plantas.</p>
+  <ul class="spec">
+    <li>Carcasa 3D ≈ 120 × 80 × 100 mm</li>
+    <li>ESP32-CAM</li>
+    <li>DHT22 con ventilación</li>
+    <li>Servo de inclinación 90° · 105° · 130°</li>
+  </ul>
+</header>
+
+<section>
+  <div class="fignum">Lámina 1 · Planta</div>
+  <h2>Avanza de frente, mira de lado</h2>
+  <p>El riel corre paralelo a la hilera y la cámara apunta a 90° de ese eje. El carro recorre las seis plantas de un rodrigón al otro. D es la distancia entre la cámara y la hilera.</p>
+  <div class="fig"><svg id="f1" class="fsvg" viewBox="0 0 720 230" role="img" aria-label="Vista en planta: el carro se mueve por el riel paralelo a la hilera y la cámara apunta hacia las plantas"></svg></div>
+  <div class="row">
+    <label class="ctl"><span class="cl">Posición del carro</span><output data-out="pos"></output>
+      <input type="range" data-k="pos" min="0" max="100" step="1"></label>
+    <button class="btn" id="play" type="button">Reproducir</button>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--amber);opacity:.5"></i>campo de visión horizontal</span>
+    <span><i class="sw" style="background:var(--vine)"></i>hilera de vides</span>
+    <span><i class="sw" style="background:var(--alum)"></i>riel de aluminio</span>
+    <span><i class="sw" style="background:var(--steel)"></i>brazo perpendicular y refuerzo</span>
+  </div>
+  <p class="note">Dispositivo ampliado ×4 para poder verlo. Distancia entre plantas supuesta: 1,5 m.</p>
+</section>
+
+<section>
+  <div class="fignum">Lámina 2 · Elevación desde el pasillo</div>
+  <h2>Seis plantas entre rodrigones</h2>
+  <p>El soporte sale del rodrigón hacia el pasillo, en perpendicular, y recién ahí gira para sostener el riel en paralelo. La abrazadera es ajustable y todo se desmonta antes de la cosecha. La proyección es oblicua: el riel queda más cerca de quien mira que las plantas.</p>
+  <div class="fig"><svg id="f2" class="fsvg" viewBox="0 0 720 250" role="img" aria-label="Vista desde el pasillo: riel entre dos rodrigones con seis plantas y el carro sobre el riel"></svg></div>
+  <p class="note">El carro se mueve con el control de la lámina 1. Los racimos de las plantas siguen la zona definida en la lámina 4.</p>
+</section>
+
+<section>
+  <div class="fignum">Lámina 3 · Sección transversal</div>
+  <h2>Carro, riel y cámara</h2>
+  <p>Vista a lo largo del riel. El carro abraza el perfil de aluminio con rodamientos y lleva el servo que inclina la carcasa. La inclinación se mide desde la horizontal: 90° mira recto hacia las plantas, y a mayor ángulo la cámara apunta más arriba.</p>
+  <div class="fig"><svg id="f3" class="fsvg" viewBox="0 0 680 392" style="min-width:600px" role="img" aria-label="Sección transversal del carro sobre el riel con la carcasa inclinada hacia las plantas"></svg></div>
+  <div class="row">
+    <label class="ctl"><span class="cl">Inclinación de la cámara</span><output data-out="tilt"></output>
+      <input type="range" data-k="tilt" min="90" max="135" step="1"></label>
+    <span class="row" style="gap:8px">
+      <button class="btn" type="button" data-set-tilt="90">90°</button>
+      <button class="btn" type="button" data-set-tilt="105">105°</button>
+      <button class="btn" type="button" data-set-tilt="130">130°</button>
+    </span>
+  </div>
+  <p class="note">En la carcasa, de izquierda a derecha: compartimento ventilado con el DHT22, cuerpo con la ESP32-CAM, tapa desmontable con pernos mariposa y visera con la ventana del lente.</p>
+</section>
+
+<section>
+  <div class="fignum">Lámina 4 · Geometría de la toma</div>
+  <h2>Ángulos ideales</h2>
+  <p>Ajusta la geometría del viñedo y la página calcula qué inclinación cubre la zona de racimos. Los valores iniciales son supuestos para reemplazar con medidas reales.</p>
+  <div class="lab">
+    <div class="ctls">
+      <label class="ctl"><span class="cl">Inclinación probada</span><output data-out="tilt"></output>
+        <input type="range" data-k="tilt" min="90" max="135" step="1"></label>
+      <label class="ctl"><span class="cl">Distancia a la hilera (D)</span><output data-out="D"></output>
+        <input type="range" data-k="D" min="0.35" max="0.9" step="0.05"></label>
+      <label class="ctl"><span class="cl">Altura de la cámara</span><output data-out="hc"></output>
+        <input type="range" data-k="hc" min="0.3" max="1" step="0.05"></label>
+      <label class="ctl"><span class="cl">Racimos desde</span><output data-out="z1"></output>
+        <input type="range" data-k="z1" min="0.5" max="1.5" step="0.05"></label>
+      <label class="ctl"><span class="cl">Racimos hasta</span><output data-out="z2"></output>
+        <input type="range" data-k="z2" min="0.6" max="1.6" step="0.05"></label>
+      <label class="ctl"><span class="cl">Campo de visión vertical</span><output data-out="v"></output>
+        <input type="range" data-k="v" min="25" max="70" step="1"></label>
+    </div>
+    <div style="display:grid;gap:10px;min-width:0">
+      <div class="fig"><svg id="f4" class="fsvg" viewBox="0 0 680 430" style="min-width:600px" role="img" aria-label="Corte lateral del viñedo con la cámara, su campo de visión y la zona de racimos"></svg></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--amber);opacity:.55"></i>lo que ve la cámara con el ángulo probado</span>
+        <span><i class="sw" style="background:var(--grape)"></i>zona de racimos</span>
+        <span><i class="sw" style="border-top:2px dashed var(--amber);height:0;width:16px;vertical-align:3px"></i>eje de visión</span>
+      </div>
+    </div>
+  </div>
+  <div id="res" style="display:grid;gap:22px;margin-top:6px"></div>
+</section>
+
+<footer>
+  Esquema conceptual, con el dispositivo ampliado en las láminas 1, 2 y 4. Medidas de la carcasa aproximadas. El campo de visión parte de una ESP32-CAM con lente OV2640 estándar (ancho de 4:3); confirma el valor con tu lente. Alturas medidas desde el suelo hasta el lente.
+</footer>
+</div>
+
+<script>
+var $=function(s){return document.querySelector(s)};
+var RAD=Math.PI/180,DEG=180/Math.PI,RAIL_OFF=.21;
+var st={pos:.35,tilt:129,D:.5,hc:.55,z1:.8,z2:1.2,v:40};
+function fm(x,d){d=d==null?2:d;return x.toFixed(d).replace('.',',')}
+var meta={
+  pos:{sc:.01,f:function(v){return Math.round(v*100)+' %'}},
+  tilt:{sc:1,f:function(v){return v+'°'}},
+  D:{sc:1,f:function(v){return fm(v)+' m'}},
+  hc:{sc:1,f:function(v){return fm(v)+' m'}},
+  z1:{sc:1,f:function(v){return fm(v)+' m'}},
+  z2:{sc:1,f:function(v){return fm(v)+' m'}},
+  v:{sc:1,f:function(v){return v+'°'}}
+};
+function marker(id){return '<marker id="'+id+'" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>'}
+function hfov(){return 2*Math.atan(Math.tan(st.v*RAD/2)*4/3)*DEG}
+function calc(){
+  var a1=Math.atan((st.z1-st.hc)/st.D)*DEG,a2=Math.atan((st.z2-st.hc)/st.D)*DEG,v=st.v,ov=.2,span=a2-a1,els=[];
+  if(span<=v){els=[(a1+a2)/2]}
+  else{var n=Math.ceil((span-v)/(v*(1-ov)))+1;for(var i=0;i<n;i++){els.push(a1+v/2+i*(span-v)/(n-1))}}
+  return {a1:a1,a2:a2,tilts:els.map(function(e){return Math.round(90+e)})};
+}
+function cover(T){
+  var e=T-90,lo=e-st.v/2,hi=e+st.v/2;
+  function h(a){return a>=89?99:st.hc+st.D*Math.tan(a*RAD)}
+  var zl=Math.max(0,h(lo)),zh=h(hi);
+  var frac=Math.max(0,Math.min(st.z2,zh)-Math.max(st.z1,zl))/(st.z2-st.z1);
+  return {zl:zl,zh:zh,frac:frac};
+}
+function cluster(cx,cy,r){
+  var pts=[[-1.6,0],[0,0],[1.6,0],[-.8,1.5],[.8,1.5],[0,3]],o='';
+  pts.forEach(function(p){o+='<circle class="s-grape" cx="'+(cx+p[0]*r)+'" cy="'+(cy+p[1]*r)+'" r="'+r+'"/>'});
+  return o;
+}
+
+function planSVG(){
+  var S=67,rowY=96,L=60,R=660,rail=rowY+st.D*S,xc=110+st.pos*500,hf=hfov(),o='',i;
+  o+='<defs>'+marker('ar1')+'</defs>';
+  o+='<text class="tb" x="360" y="22" text-anchor="middle">≈ 6 plantas entre rodrigones</text>';
+  o+='<path class="ln" d="M'+L+' 36V30H'+R+'V36"/>';
+  o+='<line class="ln dash" x1="30" x2="690" y1="'+rowY+'" y2="'+rowY+'"/>';
+  for(i=0;i<6;i++){
+    var cx=110+100*i;
+    o+='<ellipse class="s-vine" cx="'+cx+'" cy="'+rowY+'" rx="52" ry="13"/><ellipse class="s-vine2" cx="'+cx+'" cy="'+(rowY-2)+'" rx="34" ry="7"/>';
+    [-14,0,14].forEach(function(d){o+='<circle class="s-grape" cx="'+(cx+d)+'" cy="'+(rowY+10+(d===0?2:0))+'" r="3"/>'});
+    o+='<circle class="s-wood" cx="'+cx+'" cy="'+rowY+'" r="3.5"/>';
+  }
+  [L,R].forEach(function(px){
+    var dir=px===L?1:-1,sx=px+dir*40;
+    o+='<line class="st-steel" stroke-width="4" x1="'+px+'" y1="'+(rowY+10)+'" x2="'+px+'" y2="'+rail+'"/>';
+    o+='<line class="st-steel" stroke-width="4" x1="'+px+'" y1="'+rail+'" x2="'+sx+'" y2="'+rail+'"/>';
+    o+='<line class="st-steel" stroke-width="2.5" x1="'+sx+'" y1="'+rail+'" x2="'+px+'" y2="'+(rowY+16)+'"/>';
+    o+='<rect class="s-wood" x="'+(px-7)+'" y="'+(rowY-7)+'" width="14" height="14"/>';
+    o+='<rect class="st-steel" stroke-width="2.5" x="'+(px-10)+'" y="'+(rowY-10)+'" width="20" height="20" rx="2"/>';
+  });
+  o+='<rect class="s-alum" x="'+L+'" y="'+(rail-3.5)+'" width="'+(R-L)+'" height="7"/>';
+  var Lc=st.D*S+30,hw=Lc*Math.tan(hf*RAD/2);
+  o+='<polygon class="s-amber" points="'+xc+','+rail+' '+(xc-hw)+','+(rail-Lc)+' '+(xc+hw)+','+(rail-Lc)+'"/>';
+  o+='<line class="st-amber dash" stroke-width="1.5" x1="'+xc+'" y1="'+rail+'" x2="'+xc+'" y2="'+(rail-Lc)+'"/>';
+  o+='<rect class="s-steel" x="'+(xc-14)+'" y="'+(rail-6)+'" width="28" height="12" rx="2"/>';
+  o+='<rect class="s-hous" x="'+(xc-16)+'" y="'+(rail-12)+'" width="32" height="24" rx="3"/>';
+  o+='<rect class="s-alum" x="'+(xc-25)+'" y="'+(rail-8)+'" width="9" height="16" rx="1.5"/>';
+  [-4,0,4].forEach(function(d){o+='<line class="ln" x1="'+(xc-23)+'" x2="'+(xc-18)+'" y1="'+(rail+d)+'" y2="'+(rail+d)+'"/>'});
+  o+='<rect class="s-glass" x="'+(xc-7)+'" y="'+(rail-16)+'" width="14" height="4" rx="1"/>';
+  o+='<text class="tb halo" x="'+xc+'" y="'+(rowY-36)+'" text-anchor="middle">visión ⟂ al riel</text>';
+  o+='<text class="t" x="4" y="'+(rowY-18)+'">Rodrigón</text><text class="t" x="716" y="'+(rowY-18)+'" text-anchor="end">Rodrigón</text>';
+  o+='<path class="ln" d="M16 '+rowY+'H28M22 '+rowY+'V'+rail+'M16 '+rail+'H28"/><text class="ta" x="14" y="'+((rowY+rail)/2+4)+'" text-anchor="end">D</text>';
+  o+='<line class="ln" x1="150" x2="570" y1="'+(rail+34)+'" y2="'+(rail+34)+'" marker-start="url(#ar1)" marker-end="url(#ar1)"/>';
+  o+='<text class="t" x="360" y="'+(rail+52)+'" text-anchor="middle">el carro avanza paralelo a la hilera</text>';
+  o+='<text class="tm" x="716" y="'+(rail+52)+'" text-anchor="end">pasillo</text>';
+  return o;
+}
+
+function frontSVG(){
+  var S=67,G=222,L=60,R=660,sx=-st.D*20,sy=st.D*14,yr=G-(st.hc-RAIL_OFF)*S,yc=G-st.z2*S,top=G-(Math.max(st.z2,1.2)+.65)*S,o='',i;
+  o+='<text class="tb" x="360" y="16" text-anchor="middle">≈ 6 plantas entre rodrigones</text>';
+  o+='<path class="ln" d="M'+L+' 30V24H'+R+'V30"/>';
+  o+='<line class="ln" x1="20" x2="700" y1="'+G+'" y2="'+G+'"/>';
+  o+='<rect class="s-wood" x="'+(L-6)+'" y="'+top+'" width="12" height="'+(G-top)+'"/><rect class="s-wood" x="'+(R-6)+'" y="'+top+'" width="12" height="'+(G-top)+'"/>';
+  o+='<line class="st-steel" stroke-width="1.2" x1="'+L+'" x2="'+R+'" y1="'+yc+'" y2="'+yc+'"/>';
+  for(i=0;i<6;i++){
+    var cx=110+100*i;
+    o+='<line class="st-wood" stroke-width="4" x1="'+cx+'" y1="'+G+'" x2="'+cx+'" y2="'+yc+'"/>';
+    o+='<ellipse class="s-vine" cx="'+cx+'" cy="'+(yc-20)+'" rx="30" ry="22"/><ellipse class="s-vine2" cx="'+(cx-14)+'" cy="'+(yc-34)+'" rx="18" ry="14"/><ellipse class="s-vine2" cx="'+(cx+14)+'" cy="'+(yc-32)+'" rx="19" ry="15"/>';
+    var r=0;
+    for(var yy=yc+8;yy<G-st.z1*S-3;yy+=10,r++){
+      o+='<circle class="s-grape" cx="'+(cx-5+(r%2)*4)+'" cy="'+yy+'" r="3.2"/><circle class="s-grape" cx="'+(cx+4+(r%2)*3)+'" cy="'+(yy+2)+'" r="3.2"/>';
+    }
+    o+='<text class="tm" x="'+cx+'" y="'+(G+16)+'" text-anchor="middle">'+(i+1)+'</text>';
+  }
+  o+='<text class="tm" x="4" y="'+(G+16)+'">planta</text>';
+  [L,R].forEach(function(px){
+    o+='<polygon class="s-alum" points="'+px+','+yr+' '+(px+sx)+','+(yr+sy)+' '+px+','+(yr+sy+16)+'"/>';
+    o+='<line class="st-steel" stroke-width="4" x1="'+px+'" y1="'+yr+'" x2="'+(px+sx)+'" y2="'+(yr+sy)+'"/>';
+    o+='<rect class="s-steel" x="'+(px-9)+'" y="'+(yr-5)+'" width="18" height="10" rx="2"/>';
+    o+='<text class="t" x="'+px+'" y="'+(top-6)+'" text-anchor="middle">Rodrigón</text>';
+  });
+  var ry=yr+sy-3.5;
+  o+='<rect class="s-alum" x="'+(L+sx)+'" y="'+ry+'" width="'+(R-L)+'" height="7"/>';
+  var xc=110+st.pos*500+sx;
+  o+='<circle class="s-roll" cx="'+(xc-10)+'" cy="'+(ry+2)+'" r="3.2"/><circle class="s-roll" cx="'+(xc+10)+'" cy="'+(ry+2)+'" r="3.2"/>';
+  o+='<rect class="s-steel" x="'+(xc-14)+'" y="'+(ry-9)+'" width="28" height="9" rx="2"/>';
+  o+='<rect class="s-hous" x="'+(xc-16)+'" y="'+(ry-33)+'" width="32" height="24" rx="3"/>';
+  o+='<rect fill="none" stroke="var(--hous2)" stroke-width=".7" x="'+(xc-12)+'" y="'+(ry-29)+'" width="24" height="16" rx="2"/>';
+  [[-12,-29],[12,-29],[-12,-13],[12,-13]].forEach(function(p){o+='<circle class="s-steel" cx="'+(xc+p[0])+'" cy="'+(ry+p[1])+'" r="1.4"/>'});
+  o+='<rect class="s-alum" x="'+(xc-25)+'" y="'+(ry-29)+'" width="9" height="14" rx="1.5"/>';
+  [-3,0,3].forEach(function(d){o+='<line class="ln" x1="'+(xc-23)+'" x2="'+(xc-18)+'" y1="'+(ry-22+d)+'" y2="'+(ry-22+d)+'"/>'});
+  [-10,0,10].forEach(function(d){o+='<line class="st-amber dash" stroke-width="1.2" x1="'+(xc+d*.4)+'" y1="'+(ry-35)+'" x2="'+(xc+d)+'" y2="'+(ry-50)+'"/>'});
+  o+='<text class="tb halo" x="'+xc+'" y="'+(ry-58)+'" text-anchor="middle">carro y carcasa ×4</text>';
+  return o;
+}
+
+function detailSVG(){
+  var e=st.tilt-90,v=st.v,o='<defs>'+marker('ar3')+'</defs>';
+  var i;
+  [[520,100,50,36,'s-vine'],[590,80,46,32,'s-vine2'],[640,125,36,28,'s-vine'],[560,150,44,28,'s-vine2'],[500,160,34,24,'s-vine']].forEach(function(p){
+    o+='<ellipse class="'+p[4]+'" cx="'+p[0]+'" cy="'+p[1]+'" rx="'+p[2]+'" ry="'+p[3]+'"/>';
+  });
+  o+='<line class="st-wood" stroke-width="5" x1="640" y1="215" x2="640" y2="372"/>';
+  o+='<line class="st-steel" stroke-width="1.5" x1="470" y1="215" x2="670" y2="215"/>';
+  [[500,236],[548,252],[596,234],[626,262]].forEach(function(p){o+=cluster(p[0],p[1],5)});
+  o+='<text class="tb" x="468" y="340">La cámara mira a las plantas,</text><text class="tb" x="468" y="356">no al riel</text>';
+  o+='<g transform="translate(0,110)">';
+  o+='<rect class="s-alum" x="186" y="196" width="28" height="56" rx="2"/>';
+  o+='<rect class="s-steel" x="196" y="196" width="8" height="9"/><rect class="s-steel" x="186" y="214" width="5" height="8"/><rect class="s-steel" x="209" y="214" width="5" height="8"/><circle class="s-steel" cx="200" cy="236" r="4"/>';
+  o+='<rect class="s-steel" x="157" y="193" width="9" height="44" rx="2"/><rect class="s-steel" x="234" y="193" width="9" height="44" rx="2"/>';
+  o+='<rect class="s-steel" x="166" y="213" width="5" height="4"/><rect class="s-steel" x="229" y="213" width="5" height="4"/>';
+  o+='<circle class="s-roll" cx="178" cy="215" r="8"/><circle class="s-alum" cx="178" cy="215" r="3"/><circle class="s-roll" cx="222" cy="215" r="8"/><circle class="s-alum" cx="222" cy="215" r="3"/>';
+  o+='<rect class="s-steel" x="157" y="182" width="86" height="11" rx="3"/>';
+  o+='<rect class="s-steel" x="178" y="132" width="44" height="50" rx="3"/><circle class="s-alum" cx="200" cy="132" r="7"/><circle class="s-steel" cx="200" cy="132" r="2.5"/>';
+  o+='<g transform="rotate('+(-e)+' 200 132)">';
+  var cs=Math.cos(v/2*RAD),sn=Math.sin(v/2*RAD),FL=120;
+  o+='<polygon class="s-amber" points="292,65 '+(292+FL*cs)+','+(65-FL*sn)+' '+(292+FL*cs)+','+(65+FL*sn)+'"/>';
+  o+='<line class="st-amber dash" stroke-width="1.5" x1="292" y1="65" x2="480" y2="65"/>';
+  o+='<rect class="s-hous" x="130" y="22" width="140" height="110" rx="8"/>';
+  o+='<rect fill="none" stroke="var(--hous2)" stroke-width=".8" stroke-dasharray="3 3" x="142" y="34" width="116" height="86" rx="4"/>';
+  [[150,44],[250,44],[150,110],[250,110]].forEach(function(p){o+='<circle class="s-steel" cx="'+p[0]+'" cy="'+p[1]+'" r="3"/>'});
+  o+='<rect class="s-alum" x="108" y="60" width="22" height="46" rx="3"/>';
+  [68,76,84,92,100].forEach(function(y){o+='<line class="ln" x1="112" x2="126" y1="'+y+'" y2="'+y+'"/>'});
+  o+='<polygon class="s-alum" points="270,42 292,50 292,80 270,88"/><rect class="s-glass" x="289" y="54" width="4" height="22"/>';
+  o+='</g>';
+  o+='<text class="t" x="4" y="166">Servo de inclinación</text><line class="ln" x1="124" y1="162" x2="178" y2="158"/>';
+  o+='<text class="t" x="4" y="236">Carro con rodamientos</text><line class="ln" x1="132" y1="232" x2="171" y2="219"/>';
+  o+='<text class="t" x="4" y="276">Riel de aluminio, perfil T</text><line class="ln" x1="148" y1="272" x2="187" y2="250"/>';
+  o+='</g>';
+  return o;
+}
+
+function geoSVG(){
+  var S=205,G=392,xp=400,D=st.D,hc=st.hc,e=st.tilt-90,o='<defs>'+marker('ar4')+'</defs>';
+  function y(z){return G-z*S}
+  var cx=xp-D*S,cy=y(hc),c=cover(st.tilt),zl=Math.min(Math.max(c.zl,0),1.95),zh=Math.min(c.zh,1.95),yc=y(st.z2),i;
+  o+='<line class="ln" x1="20" x2="660" y1="'+G+'" y2="'+G+'"/>';
+  o+='<line class="st-wood" stroke-width="5" x1="'+(xp+26)+'" y1="'+G+'" x2="'+(xp+26)+'" y2="'+yc+'"/>';
+  o+='<ellipse class="s-vine" cx="'+(xp+26)+'" cy="'+(yc-24)+'" rx="34" ry="26"/><ellipse class="s-vine2" cx="'+(xp+18)+'" cy="'+(yc-58)+'" rx="24" ry="26"/><ellipse class="s-vine2" cx="'+(xp+38)+'" cy="'+(yc-56)+'" rx="22" ry="24"/>';
+  o+='<line class="st-steel" stroke-width="1.5" x1="'+(xp+8)+'" y1="'+yc+'" x2="'+(xp+50)+'" y2="'+yc+'"/>';
+  var r=0;
+  for(var yy=yc+10;yy<y(st.z1)-2;yy+=12,r++){
+    o+='<circle class="s-grape" cx="'+(xp+18+(r%2)*8)+'" cy="'+yy+'" r="4.5"/><circle class="s-grape" cx="'+(xp+32+(r%2)*6)+'" cy="'+(yy+4)+'" r="4.5"/>';
+  }
+  o+='<line class="ln dash" x1="'+xp+'" x2="'+xp+'" y1="'+y(1.8)+'" y2="'+G+'"/>';
+  o+='<line class="ln" x1="566" x2="566" y1="'+y(1.8)+'" y2="'+G+'"/>';
+  for(i=0;i<=7;i++){
+    var z=i*.25,major=i%2===0;
+    o+='<line class="ln" x1="566" x2="'+(566+(major?8:4))+'" y1="'+y(z)+'" y2="'+y(z)+'"/>';
+    if(major&&i>0)o+='<text class="tm" x="578" y="'+(y(z)+4)+'">'+fm(z,1)+' m</text>';
+  }
+  o+='<path fill="none" stroke="var(--grape)" stroke-width="2.5" d="M558 '+yc+'H552V'+y(st.z1)+'H558"/>';
+  o+='<text class="ta" x="466" y="'+((yc+y(st.z1))/2+4)+'">racimos</text>';
+  o+='<polygon class="s-amber" points="'+cx+','+cy+' '+xp+','+y(zh)+' '+xp+','+y(zl)+'"/>';
+  o+='<rect class="s-grape" x="'+(xp-9)+'" y="'+yc+'" width="6" height="'+(y(st.z1)-yc)+'"/>';
+  o+='<rect class="s-fill-amber" x="'+(xp+3)+'" y="'+y(zh)+'" width="6" height="'+(y(zl)-y(zh))+'"/>';
+  var hit=hc+D*Math.tan(e*RAD);
+  o+='<line class="st-amber dash" stroke-width="1.5" x1="'+cx+'" y1="'+cy+'" x2="'+xp+'" y2="'+y(hit)+'"/>';
+  [90,105,130].forEach(function(T){
+    if(T===st.tilt)return;
+    var hh=hc+D*Math.tan((T-90)*RAD);if(hh>1.9)return;
+    var yy=y(hh);
+    o+='<line class="ln" x1="'+(xp-18)+'" x2="'+(xp-11)+'" y1="'+yy+'" y2="'+yy+'"/><text class="tm halo" x="'+(xp-22)+'" y="'+(yy+4)+'" text-anchor="end">'+T+'°</text>';
+  });
+  o+='<line class="ln" x1="'+(xp-18)+'" x2="'+(xp-11)+'" y1="'+y(hit)+'" y2="'+y(hit)+'"/><text class="ta halo" x="'+(xp-22)+'" y="'+(y(hit)+4)+'" text-anchor="end">'+st.tilt+'°</text>';
+  o+='<rect class="s-steel" x="'+(cx-22)+'" y="'+(cy+12)+'" width="12" height="25"/>';
+  o+='<rect class="s-steel" x="'+(cx-34)+'" y="'+(cy+37)+'" width="40" height="7" rx="2"/>';
+  o+='<rect class="s-alum" x="'+(cx-44)+'" y="'+(cy+44)+'" width="62" height="9"/>';
+  o+='<g transform="translate('+cx+','+cy+') rotate('+(-e)+')">';
+  o+='<rect class="s-alum" x="-42" y="-6" width="9" height="14" rx="1.5"/>';
+  o+='<rect class="s-hous" x="-34" y="-13" width="34" height="26" rx="3"/>';
+  o+='<polygon class="s-alum" points="0,-8 6,-6 6,6 0,8"/><circle class="s-glass" cx="5" cy="0" r="3"/>';
+  o+='</g>';
+  o+='<path class="ln" d="M'+(cx-58)+' '+G+'V'+cy+'M'+(cx-64)+' '+G+'H'+(cx-52)+'M'+(cx-64)+' '+cy+'H'+(cx-52)+'"/>';
+  o+='<text class="ta" x="'+(cx-68)+'" y="'+((G+cy)/2)+'" text-anchor="end">'+fm(hc)+' m</text><text class="t" x="'+(cx-68)+'" y="'+((G+cy)/2+15)+'" text-anchor="end">altura de la cámara</text>';
+  o+='<line class="ln" x1="'+cx+'" x2="'+xp+'" y1="'+(G+16)+'" y2="'+(G+16)+'" marker-start="url(#ar4)" marker-end="url(#ar4)"/>';
+  o+='<text class="ta" x="'+((cx+xp)/2)+'" y="'+(G+34)+'" text-anchor="middle">D = '+fm(D)+' m a la hilera</text>';
+  return o;
+}
+
+function results(){
+  var cal=calc(),h=hfov(),foot=2*st.D*Math.tan(h*RAD/2),cur=cover(st.tilt),tl=cal.tilts;
+  function pct(f){return Math.round(f*100)}
+  var pre=[90,105,130].map(function(T){return {T:T,c:cover(T)}});
+  var best=pre.reduce(function(a,b){return b.c.frac>a.c.frac?b:a});
+  var zhTxt=cur.zh>3?'más de 3,0':fm(cur.zh);
+  var notes=[];
+  if(best.c.frac>0){notes.push('Entre tus tres posiciones, '+best.T+'° es la que más cubre: '+pct(best.c.frac)+' % de la zona de racimos.')}
+  else{notes.push('Ninguna de tus tres posiciones llega a la zona de racimos con estos valores.')}
+  pre.forEach(function(p){
+    if(p.c.frac===0){notes.push('A '+p.T+'° la cámara mira '+(p.c.zh<st.z1?'por debajo':'por encima')+' de la zona de racimos.')}
+  });
+  var hi=tl.filter(function(t){return t>130}),lo=tl.filter(function(t){return t<90});
+  if(hi.length){notes.push('El ideal ('+hi.join('°, ')+'°) pasa de 130°. Para bajarlo, sube la cámara o aleja el riel de la hilera.')}
+  if(lo.length){notes.push('El ideal ('+lo.join('°, ')+'°) queda bajo 90°: la cámara está sobre el centro de la zona y tendría que mirar hacia abajo.')}
+  var html='<div class="kpis">';
+  html+='<div class="kpi"><div class="kl">Ángulo ideal</div><div class="kv">'+tl.map(function(t){return t+'°'}).join(' · ')+'</div><div class="ks">'+(tl.length===1?'Una sola toma cubre toda la zona.':tl.length+' tomas con 20 % de traslape.')+'</div><div class="row" style="gap:8px">'+tl.map(function(t){return '<button class="btn" type="button" data-set-tilt="'+t+'">Probar '+t+'°</button>'}).join('')+'</div></div>';
+  html+='<div class="kpi"><div class="kl">Huella por toma</div><div class="kv">'+fm(foot)+' m</div><div class="ks">Ancho de hilera que ve cada imagen a '+fm(st.D)+' m, con '+fm(h,0)+'° de campo horizontal.</div></div>';
+  html+='<div class="kpi"><div class="kl">Altura vista a '+st.tilt+'°</div><div class="kv">'+fm(cur.zl)+'–'+zhTxt+' m</div><div class="ks">Cubre '+pct(cur.frac)+' % de la zona de racimos.</div></div>';
+  html+='</div>';
+  html+='<div class="kpi"><div class="kl">Cobertura de la zona con tus posiciones</div><div class="cov">';
+  pre.forEach(function(p){html+='<span>'+p.T+'°</span><span class="track"><span class="fill" style="display:block;width:'+pct(p.c.frac)+'%"></span></span><span>'+pct(p.c.frac)+' %</span>'});
+  html+='</div></div>';
+  html+='<div class="notes">'+notes.map(function(n){return '<p>'+n+'</p>'}).join('')+'</div>';
+  return html;
+}
+
+function syncInputs(k){
+  document.querySelectorAll('input[data-k="'+k+'"]').forEach(function(i){i.value=Math.round(st[k]/meta[k].sc*1000)/1000});
+  document.querySelectorAll('[data-out="'+k+'"]').forEach(function(o){o.textContent=meta[k].f(st[k])});
+}
+function render(){
+  $('#f1').innerHTML=planSVG();
+  $('#f2').innerHTML=frontSVG();
+  $('#f3').innerHTML=detailSVG();
+  $('#f4').innerHTML=geoSVG();
+  $('#res').innerHTML=results();
+  document.querySelectorAll('[data-set-tilt]').forEach(function(b){b.classList.toggle('on',+b.dataset.setTilt===st.tilt)});
+}
+document.addEventListener('input',function(ev){
+  var i=ev.target;if(!i.dataset||!i.dataset.k)return;
+  var k=i.dataset.k;st[k]=parseFloat(i.value)*meta[k].sc;
+  if(k==='z1'&&st.z2<st.z1+.1){st.z2=Math.round((st.z1+.1)*100)/100;syncInputs('z2')}
+  if(k==='z2'&&st.z1>st.z2-.1){st.z1=Math.round((st.z2-.1)*100)/100;syncInputs('z1')}
+  if(k==='pos'&&raf){stopPlay()}
+  syncInputs(k);render();
+});
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-set-tilt]');
+  if(!b)return;st.tilt=+b.dataset.setTilt;syncInputs('tilt');render();
+});
+var raf=0,dir=1,last=0;
+function tick(t){
+  var dt=Math.min((t-last)/1000,.1);last=t;
+  st.pos+=dir*dt*.12;
+  if(st.pos>=1){st.pos=1;dir=-1}
+  if(st.pos<=0){st.pos=0;dir=1}
+  syncInputs('pos');render();raf=requestAnimationFrame(tick);
+}
+function stopPlay(){cancelAnimationFrame(raf);raf=0;$('#play').textContent='Reproducir'}
+$('#play').addEventListener('click',function(){
+  if(raf){stopPlay();return}
+  last=performance.now();raf=requestAnimationFrame(tick);this.textContent='Pausar';
+});
+Object.keys(meta).forEach(syncInputs);
+st.tilt=calc().tilts[0];syncInputs('tilt');
+render();
+</script>
+
+</body>
+</html>
